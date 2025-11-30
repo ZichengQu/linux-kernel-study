@@ -69,9 +69,12 @@ trace_reset() {
 
 	# 禁用所有事件跟踪
 	echo 0 > /sys/kernel/debug/tracing/events/enable
+	echo 0 > /sys/kernel/debug/tracing/options/record-tgid
 
 	# 禁用所有 stacktrace
 	for trigger in /sys/kernel/debug/tracing/events/*/*/trigger; do echo '!stacktrace' > "$trigger" 2>/dev/null; done
+
+	echo 0 > /sys/kernel/debug/tracing/options/stacktrace
 	
 	# trace_reset_sched
 	# trace_reset_irq
@@ -95,6 +98,9 @@ trace_set_configs() {
 	# echo schedule > /sys/kernel/debug/tracing/set_ftrace_filter 						# set_ftrace_filter + function 跟踪器
 	# echo select_task_rq_fair > /sys/kernel/debug/tracing/set_graph_function 			# set_graph_function + function_graph 跟踪器
 
+	echo 1 > /sys/kernel/debug/tracing/options/record-tgid								# 记录主进程
+	echo 1 > /sys/kernel/debug/tracing/events/sched/sched_stat_runtime/enable			# 记录进程的 vruntime
+
 	# ls /sys/kernel/tracing/events/sched/ # 查看某个子系统下的事件，例如调度事件
 	echo 1 > /sys/kernel/debug/tracing/events/sched/sched_waking/enable 				# trace_sched_waking(): try_to_wake_up() 函数的最初阶段。任务尝试被唤醒的最开始阶段，状态还未改变。
     echo 1 > /sys/kernel/debug/tracing/events/sched/sched_wakeup/enable 				# trace_sched_wakeup():try_to_wake_up() 函数的末尾阶段。任务成功从阻塞状态转换到 runnable，放入 runqueue。
@@ -102,6 +108,7 @@ trace_set_configs() {
     echo 1 > /sys/kernel/debug/tracing/events/sched/sched_switch/enable 				# trace_sched_switch(): __schedule() 或者 schedule() 的上下文里，CPU 上的上下文切换完成，旧任务换下，新任务运行。runnable的时间段统计是 trace_sched_switch() - trace_sched_wakeup() 或 trace_sched_wakeup_new()
     echo 1 > /sys/kernel/debug/tracing/events/sched/sched_migrate_task/enable			# trace_sched_migrate_task(): set_task_cpu() 函数中。在任务从一个 CPU 的 runqueue 移动到另一个 CPU 的 runqueue 时触发
 	# echo stacktrace > /sys/kernel/debug/tracing/events/sched/xxx/trigger 				# 捕获堆栈，xxx可以是sched_wakeup...sched_migrate_task等
+	# echo 1 > /sys/kernel/debug/tracing/options/stacktrace								# 所有堆栈
 
 	# 硬中断
 	# echo 1 > /sys/kernel/debug/tracing/events/irq/irq_handler_entry/enable 			# 硬中断开始执行。
